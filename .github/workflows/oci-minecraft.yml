@@ -1,0 +1,28 @@
+name: OCI Minecraft Runner
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'  # Cada 2 minutos
+  workflow_dispatch:        # Permite correrlo manualmente desde GitHub
+
+jobs:
+  run-oci-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'  # o la versión que uses
+
+    - name: Install OCI CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        pip3 install oci-cli
+
+    - name: Run retry script
+      run: php retry.php
