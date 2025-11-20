@@ -2,22 +2,21 @@ name: OCI Minecraft
 
 on:
   schedule:
-    - cron: "*/2 * * * *"  # Corre cada 2 minutos
-  workflow_dispatch:       # Permite ejecutarlo manualmente
+    - cron: "*/2 * * * *"   # Cada 2 minutos
+  workflow_dispatch:
 
 concurrency:
   group: oci-minecraft-group
-  cancel-in-progress: false   # NUNCA cancelar un run que ya está en proceso
+  cancel-in-progress: false   # Nunca cancelar runs activos
 
 jobs:
   run-minecraft:
     runs-on: ubuntu-latest
-    timeout-minutes: 350       # Justo debajo del límite de 6h de GitHub
+    timeout-minutes: 355   # Duración máxima del run (~5h55m)
 
     steps:
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -39,14 +38,14 @@ jobs:
           OCI_REGION: ${{ secrets.OCI_REGION }}
         run: |
           mkdir -p ~/.oci
-          cat > ~/.oci/config <<EOF
-[DEFAULT]
-user=$OCI_USER_OCID
-tenancy=$OCI_TENANCY_OCID
-fingerprint=$OCI_FINGERPRINT
-region=$OCI_REGION
-key_file=~/.oci/oci_api_key.pem
-EOF
+          {
+            echo "[DEFAULT]"
+            echo "user=$OCI_USER_OCID"
+            echo "tenancy=$OCI_TENANCY_OCID"
+            echo "fingerprint=$OCI_FINGERPRINT"
+            echo "region=$OCI_REGION"
+            echo "key_file=~/.oci/oci_api_key.pem"
+          } > ~/.oci/config
           chmod 600 ~/.oci/config
 
       - name: Create private key
