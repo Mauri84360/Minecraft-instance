@@ -7,14 +7,16 @@ on:
 
 concurrency:
   group: oci-minecraft-group
-  cancel-in-progress: true
+  cancel-in-progress: false   # <-- importante: no cancelar runs en curso
 
 jobs:
   run-minecraft:
     runs-on: ubuntu-latest
+    timeout-minutes: 350      # suficiente para tu runner (~5h50). Ajusta si cambias runner.php
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -23,32 +25,38 @@ jobs:
 
       - name: Install OCI CLI (Correct Method)
         run: |
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y python3-pip
-          python3 -m pip install oci-cli --break-system-packages
+          # instalar OCI CLI en el usuario runner (evita modificar paquetes del sistema)
+          python3 -m pip install --user oci-cli --break-system-packages
+          # añadir local bin del usuario al PATH de estos pasos
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure OCI CLI
-        run: |
-          mkdir -p ~/.oci
-          echo "[DEFAULT]" > ~/.oci/config
-          echo "user=$OCI_USER_OCID" >> ~/.oci/config
-          echo "tenancy=$OCI_TENANCY_OCID" >> ~/.oci/config
-          echo "fingerprint=$OCI_FINGERPRINT" >> ~/.oci/config
-          echo "region=$OCI_REGION" >> ~/.oci/config
-          echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
         env:
           OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
           OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
           OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
           OCI_REGION: ${{ secrets.OCI_REGION }}
+        run: |
+          mkdir -p ~/.oci
+          cat > ~/.oci/config <<EOF
+[DEFAULT]
+user=${OCI_USER_OCID}
+tenancy=${OCI_TENANCY_OCID}
+fingerprint=${OCI_FINGERPRINT}
+region=${OCI_REGION}
+key_file=~/.oci/oci_api_key.pem
+EOF
+          chmod 600 ~/.oci/config
 
       - name: Create private key
-        run: |
-          echo "${OCI_PRIVATE_KEY}" > ~/.oci/oci_api_key.pem
-          chmod 600 ~/.oci/oci_api_key.pem
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.oci
+          echo "${OCI_PRIVATE_KEY}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
 
       - name: Ejecutar runner
         run: |
