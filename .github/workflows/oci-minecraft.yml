@@ -5,6 +5,10 @@ on:
     - cron: '*/2 * * * *'
   workflow_dispatch:
 
+concurrency:
+  group: minecraft-a1-creator
+  cancel-in-progress: true
+
 jobs:
   run-minecraft:
     runs-on: ubuntu-latest
@@ -46,4 +50,4 @@ jobs:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
 
       - name: Run Minecraft script
-        run: php "time php runner.php"
+        run: php runner.php
