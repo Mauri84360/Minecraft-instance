@@ -15,7 +15,7 @@ function hhb_exec(string $cmd, string $stdin = "", string &$stdout = null, strin
     $stdouth = tmpfile();
     $stderrh = tmpfile();
     $descriptorspec = [
-        0 => ["pipe", "rb"],  // stdin
+        0 => ["pipe", "rb"],
         1 => ["file", stream_get_meta_data($stdouth)['uri'], 'ab'],
         2 => ["file", stream_get_meta_data($stderrh)['uri'], 'ab'],
     ];
@@ -59,7 +59,7 @@ function hhb_exec(string $cmd, string $stdin = "", string &$stdout = null, strin
         };
 
         while (($status = proc_get_status($proc))["running"]) {
-            if (!$fetchstd()) usleep(100 * 1000); // 100 ms
+            if (!$fetchstd()) usleep(100 * 1000);
         }
         $proc_ret = $status["exitcode"];
         proc_close($proc);
@@ -74,13 +74,17 @@ function hhb_exec(string $cmd, string $stdin = "", string &$stdout = null, strin
 // Script principal de reintento
 $cmd = "php index.php 2>&1";
 
-for ($attempt = 1;; $attempt++) {
-    echo "[INFO] Intento #$attempt: verificando disponibilidad de VM.Standard.A1.Flex...\n";
+// ---- AJUSTE: 29 intentos por run ----
+$max_attempts = 29;
+
+for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+
+    echo "[INFO] Intento #$attempt de $max_attempts: verificando disponibilidad de VM.Standard.A1.Flex...\n";
     $ret = hhb_exec($cmd, "", $stdout, $stderr, true);
 
     // Detectar errores de capacidad o "TooManyRequests"
     if (str_contains($stdout, "Out of host capacity") || str_contains($stdout, "TooManyRequests")) {
-        $wait_seconds = 120; // espera 2 minutos, puedes cambiar a 30
+        $wait_seconds = 120; // 2 minutos
         echo "[WARN] Falló la creación. Reintentando en $wait_seconds segundos...\n";
         for ($i = 1; $i <= $wait_seconds; $i++) {
             echo "$i/$wait_seconds\r";
@@ -90,7 +94,7 @@ for ($attempt = 1;; $attempt++) {
         continue;
     }
 
-    // Validación estricta de salida
+    // Validación estricta
     $expected = '{
   "code": "InternalError",
   "message": "Out of host capacity."
@@ -117,3 +121,6 @@ for ($attempt = 1;; $attempt++) {
         sleep(1);
     }
 }
+
+echo "\n[INFO] Ciclo completado. Fin del run seguro antes de las 6 horas.\n";
+exit;
