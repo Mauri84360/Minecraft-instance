@@ -2,17 +2,17 @@ name: OCI Minecraft
 
 on:
   schedule:
-    - cron: '*/2 * * * *'
+    - cron: "*/2 * * * *"   # Cada 2 minutos
   workflow_dispatch:
 
 concurrency:
   group: oci-minecraft-group
-  cancel-in-progress: false   # <-- importante: no cancelar runs en curso
+  cancel-in-progress: false   # No cancelar runs en curso
 
 jobs:
   run-minecraft:
     runs-on: ubuntu-latest
-    timeout-minutes: 350      # suficiente para tu runner (~5h50). Ajusta si cambias runner.php
+    timeout-minutes: 350      # ~5h50, ideal para GitHub Free
 
     steps:
       - name: Checkout repo
@@ -23,13 +23,11 @@ jobs:
         with:
           php-version: '8.2'
 
-      - name: Install OCI CLI (Correct Method)
+      - name: Install OCI CLI
         run: |
           sudo apt-get update -y
           sudo apt-get install -y python3-pip
-          # instalar OCI CLI en el usuario runner (evita modificar paquetes del sistema)
           python3 -m pip install --user oci-cli --break-system-packages
-          # añadir local bin del usuario al PATH de estos pasos
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure OCI CLI
@@ -40,7 +38,7 @@ jobs:
           OCI_REGION: ${{ secrets.OCI_REGION }}
         run: |
           mkdir -p ~/.oci
-          cat > ~/.oci/config <<EOF
+          cat > ~/.oci/config <<'EOF'
 [DEFAULT]
 user=${OCI_USER_OCID}
 tenancy=${OCI_TENANCY_OCID}
@@ -54,11 +52,10 @@ EOF
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          mkdir -p ~/.oci
           echo "${OCI_PRIVATE_KEY}" > ~/.oci/oci_api_key.pem
           chmod 600 ~/.oci/oci_api_key.pem
 
-      - name: Ejecutar runner
+      - name: Ejecutar runner.php
         run: |
           echo "=== Ejecutando runner.php con protección de bloqueo ==="
           php runner.php
