@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: minecraft-a1-creator
+  group: oci-minecraft-group
   cancel-in-progress: true
 
 jobs:
@@ -14,19 +14,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
 
-      - name: Install OCI CLI
+      # -----------------------------
+      #  INSTALAR OCI CLI (rápido y estable)
+      # -----------------------------
+      - name: Install OCI CLI (Official Installer)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install --user oci-cli
+          curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh \
+            | bash -s -- --accept-all-defaults
 
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      # -----------------------------
+      #  CONFIGURAR OCI
+      # -----------------------------
       - name: Configure OCI CLI
         run: |
           mkdir -p ~/.oci
@@ -36,12 +43,16 @@ jobs:
           echo "fingerprint=$OCI_FINGERPRINT" >> ~/.oci/config
           echo "region=$OCI_REGION" >> ~/.oci/config
           echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
+
         env:
           OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
           OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
           OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
           OCI_REGION: ${{ secrets.OCI_REGION }}
 
+      # -----------------------------
+      #  CARGAR PRIVATE KEY
+      # -----------------------------
       - name: Create private key
         run: |
           echo "${OCI_PRIVATE_KEY}" > ~/.oci/oci_api_key.pem
@@ -49,5 +60,8 @@ jobs:
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
 
+      # -----------------------------
+      #  RUNNER (tu script principal)
+      # -----------------------------
       - name: Run Minecraft script
-        run: php runner.php
+        run: php "runner.php"
