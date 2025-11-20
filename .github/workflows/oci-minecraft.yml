@@ -2,19 +2,20 @@ name: OCI Minecraft
 
 on:
   schedule:
-    - cron: "*/2 * * * *"   # Cada 2 minutos
-  workflow_dispatch:
+    - cron: "*/2 * * * *"  # Corre cada 2 minutos
+  workflow_dispatch:       # Permite ejecutarlo manualmente
 
 concurrency:
   group: oci-minecraft-group
-  cancel-in-progress: false   # No cancelar runs en curso
+  cancel-in-progress: false   # NUNCA cancelar un run que ya está en proceso
 
 jobs:
   run-minecraft:
     runs-on: ubuntu-latest
-    timeout-minutes: 350      # ~5h50, ideal para GitHub Free
+    timeout-minutes: 350       # Justo debajo del límite de 6h de GitHub
 
     steps:
+
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -38,12 +39,12 @@ jobs:
           OCI_REGION: ${{ secrets.OCI_REGION }}
         run: |
           mkdir -p ~/.oci
-          cat > ~/.oci/config <<'EOF'
+          cat > ~/.oci/config <<EOF
 [DEFAULT]
-user=${OCI_USER_OCID}
-tenancy=${OCI_TENANCY_OCID}
-fingerprint=${OCI_FINGERPRINT}
-region=${OCI_REGION}
+user=$OCI_USER_OCID
+tenancy=$OCI_TENANCY_OCID
+fingerprint=$OCI_FINGERPRINT
+region=$OCI_REGION
 key_file=~/.oci/oci_api_key.pem
 EOF
           chmod 600 ~/.oci/config
@@ -52,10 +53,11 @@ EOF
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          echo "${OCI_PRIVATE_KEY}" > ~/.oci/oci_api_key.pem
+          mkdir -p ~/.oci
+          echo "$OCI_PRIVATE_KEY" > ~/.oci/oci_api_key.pem
           chmod 600 ~/.oci/oci_api_key.pem
 
-      - name: Ejecutar runner.php
+      - name: Ejecutar runner
         run: |
           echo "=== Ejecutando runner.php con protección de bloqueo ==="
           php runner.php
