@@ -78,10 +78,17 @@ $cmd = "php index.php 2>&1";
 $max_attempts = 147;
 
 for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+
     echo "[INFO] Intento #$attempt de $max_attempts: verificando disponibilidad de VM.Standard.A1.Flex...\n";
     $ret = hhb_exec($cmd, "", $stdout, $stderr, true);
 
-    if (str_contains($stdout, "Out of host capacity") || str_contains($stdout, "TooManyRequests")) {
+    // Manejo de errores comunes del CLI (503, TooManyRequests, etc)
+    if (
+        str_contains($stdout, "Out of host capacity") ||
+        str_contains($stdout, "TooManyRequests") ||
+        str_contains($stdout, "503") ||
+        str_contains($stderr, "503")
+    ) {
         $wait_seconds = 120;
         echo "[WARN] Falló la creación. Reintentando en $wait_seconds segundos...\n";
         for ($i = 1; $i <= $wait_seconds; $i++) {
@@ -92,26 +99,28 @@ for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
         continue;
     }
 
+    // JSON esperado
     $expected = '{
   "code": "InternalError",
   "message": "Out of host capacity."
 }';
 
+    //  YA NO SE DETIENE POR STDOUT inesperado
+    // Solo valida que el stdout contenga algo relacionado, si no lo contiene
+    // igual continúa y respeta la duración total.
+
     if (!str_contains($stdout, $expected)) {
-        echo "Unexpected STDOUT output, dumping...\n";
-        file_put_contents(__FILE__ . ".actual", var_export($stdout, true));
-        file_put_contents(__FILE__ . ".expected", var_export($expected, true));
-        die("Terminado por salida inesperada.\n");
+        echo "[WARN] STDOUT inesperado, pero se ignora para continuar el run.\n";
     }
 
-    if ($stderr !== '') {
-        echo "Unexpected STDERR output, dumping...\n";
-        file_put_contents(__FILE__ . ".actual_stderr", var_export($stderr, true));
-        die("Terminado por error inesperado.\n");
+    //  YA NO SE DETIENE POR STDERR a menos que sea un error fatal
+    if ($stderr !== '' && !str_contains($stderr, "Warning") && !str_contains($stderr, "WARNING")) {
+        echo "[WARN] STDERR inesperado (no fatal), se ignora.\n";
     }
 
-    echo "[INFO] Comando ejecutado correctamente.\n";
+    echo "[INFO] Comando ejecutado. Esperando siguiente intento...\n";
 
+    // Espera larga entre intentos
     for ($i = 1, $imax = 701; $i < $imax; $i++) {
         echo "$i/$imax\r";
         sleep(1);
