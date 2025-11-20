@@ -75,7 +75,7 @@ function hhb_exec(string $cmd, string $stdin = "", string &$stdout = null, strin
 $cmd = "php index.php 2>&1";
 
 // Duración total ≈ 5 horas
-$max_attempts = 147;
+$max_attempts = 130;  // <-- cambiado de 147 a 130
 
 for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
 
@@ -106,9 +106,6 @@ for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
 }';
 
     //  YA NO SE DETIENE POR STDOUT inesperado
-    // Solo valida que el stdout contenga algo relacionado, si no lo contiene
-    // igual continúa y respeta la duración total.
-
     if (!str_contains($stdout, $expected)) {
         echo "[WARN] STDOUT inesperado, pero se ignora para continuar el run.\n";
     }
