@@ -75,7 +75,7 @@ function hhb_exec(string $cmd, string $stdin = "", string &$stdout = null, strin
 $cmd = "php index.php 2>&1";
 
 // Duración total ≈ 5 horas
-$max_attempts = 130;  // <-- cambiado de 147 a 130
+$max_attempts = 90;  // <-- cambiado de 130 a 90
 
 for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
 
