@@ -48,6 +48,15 @@ jobs:
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
 
+      # ========================================================
+      # PASO INYECTADO: Aquí se materializa tu llave pública
+      # ========================================================
+      - name: Inyectar llave pública de Minecraft en el Runner
+        run: |
+          mkdir -p /home/runner/.ssh
+          echo "${{ secrets.OCI_SSH_PUBLIC_KEY }}" > /home/runner/.ssh/id_minecraft_2025.pub
+          chmod 600 /home/runner/.ssh/id_minecraft_2025.pub
+
       - name: Ejecutar runner
         run: |
           echo "=== Ejecutando runner.php con protección de bloqueo ==="
