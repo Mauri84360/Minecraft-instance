@@ -15,7 +15,7 @@ $shape = "VM.Standard.A1.Flex";
 $image_id = "ocid1.image.oc1.mx-queretaro-1.aaaaaaaaghkhc3e3blo7ocpqfi7g35bhq4l6gqotwimwnvqjthfbkulwnnca";
 $instance_name = "Minecraft" . time();
 
-// Recursos flexibles
+// Recursos flexibles (4 cores / 24 GB RAM)
 $shape_config = json_encode([
     "ocpus" => 4,
     "memoryInGBs" => 24
@@ -30,6 +30,9 @@ $subnet_id = "ocid1.subnet.oc1.mx-queretaro-1.aaaaaaaazmk7uzhrr4y5za3qirdcf6hacm
 
 // Asignar IP pública
 $assign_public_ip = true;
+
+// Ruta donde el GitHub Actions guardará tu llave de 399 bytes
+$ssh_key_path = "/home/runner/.ssh/id_minecraft_2025.pub";
 
 // ---------- FUNCIONES ----------
 
@@ -55,17 +58,19 @@ function run_cmd(string $cmd, ?string &$output = null, ?string &$error = null): 
 
 // ---------- CREAR INSTANCIA ----------
 
+// PARCHEADO: Se añade la bandera --ssh-authorized-keys-file al comando original
 $cmd = sprintf(
-    'oci compute instance launch --compartment-id %s --availability-domain %s --shape %s --shape-config \'%s\' --image-id %s --subnet-id %s --display-name %s --boot-volume-size-in-gbs %d %s',
+    'oci compute instance launch --compartment-id %s --availability-domain %s --shape %s --shape-config \'%s\' --image-id %s --subnet-id %s --display-name %s --boot-volume-size-in-gbs %d %s --ssh-authorized-keys-file %s',
     escapeshellarg($compartment_id),
     escapeshellarg($availability_domain),
     escapeshellarg($shape),
     $shape_config,
-    escapeshellarg($image_id),
-    escapeshellarg($subnet_id),
-    escapeshellarg($instance_name),
+    escaphellarg($image_id),
+    escaphellarg($subnet_id),
+    escaphellarg($instance_name),
     $boot_volume_size_in_gbs,
-    $assign_public_ip ? '--assign-public-ip true' : ''
+    $assign_public_ip ? '--assign-public-ip true' : '',
+    escapeshellarg($ssh_key_path)
 );
 
 echo "[INFO] Intentando crear instancia...\n";
