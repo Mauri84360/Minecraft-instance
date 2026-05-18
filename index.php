@@ -58,16 +58,16 @@ function run_cmd(string $cmd, ?string &$output = null, ?string &$error = null): 
 
 // ---------- CREAR INSTANCIA ----------
 
-// PARCHEADO: Se añade la bandera --ssh-authorized-keys-file al comando original
+// CORREGIDO: Todas las funciones dicen 'escapeshellarg' correctamente
 $cmd = sprintf(
     'oci compute instance launch --compartment-id %s --availability-domain %s --shape %s --shape-config \'%s\' --image-id %s --subnet-id %s --display-name %s --boot-volume-size-in-gbs %d %s --ssh-authorized-keys-file %s',
     escapeshellarg($compartment_id),
     escapeshellarg($availability_domain),
     escapeshellarg($shape),
     $shape_config,
-    escaphellarg($image_id),
-    escaphellarg($subnet_id),
-    escaphellarg($instance_name),
+    escapeshellarg($image_id),
+    escapeshellarg($subnet_id),
+    escapeshellarg($instance_name),
     $boot_volume_size_in_gbs,
     $assign_public_ip ? '--assign-public-ip true' : '',
     escapeshellarg($ssh_key_path)
